@@ -1,0 +1,15 @@
+-- Reacreate DB
+	-- From /server/db
+	-- ./create_db.sh
+
+-- Fill DB
+	-- From /server
+	-- node updater.js
+
+-- Start Backend
+	-- From /server
+	-- npm start
+
+-- Start Frontend
+	-- From /client
+	-- npm start
