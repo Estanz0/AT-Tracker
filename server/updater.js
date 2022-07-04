@@ -1,4 +1,6 @@
 require("dotenv").config();
+const csv = require('csv-parser')
+const fs = require('fs')
 
 const Pool = require('pg').Pool;
 
@@ -14,21 +16,146 @@ const pool = new Pool({
 
 var update = async function () {
     updateStops();
+    updateRoutes();
+    updateShapes();
+    updateTrips();
+    updateStopTimes(); 
     // updateVehicleLocations();
 }
 
-var updateStops = async function () {
-    var queryStr = "INSERT INTO stop(id, name, latitude, longitude) VALUES ($1, $2, $3, $4)";
-
-    const stops = await apiCall('general', 'stops', '');
-
-    for(let i = 0; i < stops.length; i++)
+function updateStops() {
+    var fName = 'stops.txt';
+    var stopsObj = [];
+    var queryStr = "INSERT INTO Stops(stop_id, stop_code, stop_name, stop_desc, stop_lat, stop_lon, zone_id, location_type) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)";
+    fs.createReadStream('data/gtfs/' + fName)
+    .pipe(csv())
+    .on('data', (data) => {
         pool.query(queryStr, [
-            stops[i].stop_id, 
-            stops[i].stop_name, 
-            stops[i].stop_lat, 
-            stops[i].stop_lon
-        ]).catch(err => console.log(stops[i]));
+            data.stop_id,
+            data.stop_code,
+            data.stop_name,
+            data.stop_desc,
+            parseFloat(data.stop_lat),
+            parseFloat(data.stop_lon),
+            data.zone_id,
+            data.location_type
+        ]).catch(err => {
+            console.log(data)
+            console.log(err);
+        });
+        stopsObj.push(data);
+    })
+    .on('end', function() { 
+        // parent_station has FK constraint on stops so need to update it last
+        queryStr = "UPDATE Stops SET parent_station = $1 WHERE stop_id = $2";
+        for(let i = 0; i < stopsObj.length; i++) {
+            pool.query(queryStr, [
+                stopsObj[i].parent_station,
+                stopsObj[i].stop_id
+            ]).catch(err => {
+                console.log(data)
+                console.log(err);
+            });
+        }
+        console.log("Stops Updated");
+    });  
+    
+}
+
+function updateRoutes() {
+    var fName = 'routes.txt';
+    var queryStr = "INSERT INTO Routes VALUES ($1, $2, $3, $4, $5, $6, $7)";
+    fs.createReadStream('data/gtfs/' + fName)
+    .pipe(csv())
+    .on('data', (data) => {
+        pool.query(queryStr, [
+            data.route_id,  
+            data.route_long_name,                     
+            +data.route_type, 
+            data.route_text_color,   
+            data.agency_id,                       
+            +data.route_color,    
+            data.route_short_name
+        ]).catch(err => {
+            console.log(data)
+            console.log(err);
+        });
+    })
+    .on('end', function() { 
+        console.log("Routes Updated");
+    })
+}
+
+function updateShapes() {
+    var fName = 'shapes_copy.txt';
+    var queryStr = "INSERT INTO Shapes VALUES ($1, $2, $3, $4, $5)";
+    fs.createReadStream('data/gtfs/' + fName)
+    .pipe(csv())
+    .on('data', (data) => {
+        pool.query(queryStr, [
+            data.shape_id,  
+            parseFloat(data.shape_pt_lat),                     
+            parseFloat(data.shape_pt_lon), 
+            +data.shape_pt_sequence,   
+            +data.shape_dist_traveled
+        ]).catch(err => {
+            console.log(data)
+            console.log(err);
+        });
+    })
+    .on('end', function() { 
+        console.log("Shapes Updated");
+    })
+}
+
+function updateTrips() {
+    var fName = 'trips.txt';
+    var queryStr = "INSERT INTO Trips VALUES ($1, $2, $3, $4, $5, $6, $7)";
+    fs.createReadStream('data/gtfs/' + fName)
+    .pipe(csv())
+    .on('data', (data) => {
+        pool.query(queryStr, [
+            data.trip_id,  
+            data.route_id,                     
+            +data.block_id, 
+            +data.direction_id,   
+            +data.trip_headsign,
+            data.shape_id,
+            data.service_id
+        ]).catch(err => {
+            console.log(data)
+            console.log(err);
+        });
+    })
+    .on('end', function() { 
+        console.log("Trips Updated")
+    })
+}
+
+function updateStopTimes() {
+    var fName = 'stop_times_copy.txt';
+    var queryStr = "INSERT INTO Stop_times VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)";
+    fs.createReadStream('data/gtfs/' + fName)
+    .pipe(csv())
+    .on('data', (data) => {
+        pool.query(queryStr, [
+            data.trip_id,  
+            data.arrival_time,                     
+            +data.departure_time, 
+            +data.stop_id,   
+            +data.stop_sequence,
+            data.stop_headsign,
+            +data.pickup_type,
+            +data.drop_off_type,
+            +data.shape_dist_traveled
+        ]).catch(err => {
+            console.log(data)
+            console.log(err);
+        });
+    })
+    .on('end', function() { 
+        console.log("Stop Times Updated")
+    })
 }
 
 async function apiCall(feed, urlExt, id) {
