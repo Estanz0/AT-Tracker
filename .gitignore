@@ -17,13 +17,24 @@
 .env.development.local
 .env.test.local
 .env.production.local
+temp
 
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+.vscode
+
 # api key
 .env
+config.py
+
+# temp files
+test.py
+demo.json
+
+# database
+at_bus_app.db
 
 # data
 /server/data/gtfs
