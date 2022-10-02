@@ -25,6 +25,11 @@ yarn-error.log*
 
 .vscode
 
+server_py/__pycache__/
+
+# virtual env
+server_py/.venv/
+
 # api key
 .env
 config.py
@@ -37,4 +42,4 @@ demo.json
 at_bus_app.db
 
 # data
-/server/data/gtfs
+data/

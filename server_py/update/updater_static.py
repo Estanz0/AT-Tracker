@@ -1,113 +1,52 @@
 import sys
 sys.path.append("/Users/byron-mac/MyDocuments/Projects/AT-Bus/server_py")
 
-import requests
-# import pandas as pd
-import json 
+import requests, zipfile, io
+import json, csv
+import sqlite3
+import pandas
 
 import config
 
 from sqlalchemy import inspect, MetaData
 from database import engine
 
-AT_API_GTFS = "https://api.at.govt.nz/v2/gtfs/"
 MY_API = "http://127.0.0.1:8000"
 
-
-AT_HEADER = {
-    # Request headers
-    'Ocp-Apim-Subscription-Key': config.AT_API_KEY,
-}
+def download_gtfs_files():
+    r = requests.get('https://cdn01.at.govt.nz/data/gtfs.zip')
+    z = zipfile.ZipFile(io.BytesIO(r.content))
+    z.extractall("./data")
 
 def update():
-    update_table(table='routes')
-    update_table(table='trips')
-    update_stops() 
-    # update_routes()
-    # update_trips()
-    # update_stops() 
-    # update_stop_times()
+    download_gtfs_files()
 
-def update_table(table):
+    replace_table(table='routes')
+    replace_table(table='shapes')
+    replace_table(table='trips')
+    replace_table(table='stops')
+    replace_table(table='stop_times')
+
+def replace_table(table):
+    conn = create_connection(r'../at_bus_app.db')
+
+    df = pandas.read_csv(f'./data/{table}.txt')
+    df.to_sql(table, conn, if_exists='replace', index=False)
+
+
+def create_connection(db_file):
+    """ create a database connection to the SQLite database
+        specified by the db_file
+    :param db_file: database file
+    :return: Connection object or None
     """
-    Updates a table using data retrieved from AT API.
-    Can be used for tables with one primary key column.
-        - Create / Update records 
-        - Delete records
-    """
+    conn = None
+    try:
+        conn = sqlite3.connect(db_file)
+    except Error as e:
+        print(e)
 
-    base_at_url = f'{AT_API_GTFS}/{table}/'
-    base_my_url = f'{MY_API}/{table}/'
-
-    # Create, update records
-    column_names = get_column_names(table)
-    primary_key = get_primary_key(table)
-    response = requests.get(base_at_url, headers=AT_HEADER)
-    records = response.json()["response"]
-
-    for i, rec in enumerate(records):
-        # filter and reorder columns to match schema
-        rec = {key: rec[key] for key in column_names}
-        data = json.dumps(rec)
-        res = requests.post(base_my_url, data=data)
-
-    # Delete records
-    # Find existing records that no longer exist
-    existing_ids = get_existing_records(table, primary_key)
-    updated_ids = [rec[primary_key] for rec in records]
-    ids_to_delete = [rec_id for rec_id in existing_ids if rec_id not in updated_ids]
-    for rec_id in ids_to_delete:
-        res = requests.delete(f'{base_my_url}{rec_id}')
-
-def update_stops():
-    """
-    Update the stops table
-        - Update stop_id of existing stops
-        - Delete removed stops
-        - Create new stops
-    """
-    table = 'stops'
-    secondary_table = 'routes'
-
-    base_at_url = f'{AT_API_GTFS}/{table}/'
-    base_at_url_secondary = f'{AT_API_GTFS}/{table}/tripId/'
-    base_my_url = f'{MY_API}/{table}/'
-    base_my_url_secondary = f'{MY_API}/{secondary_table}/'
-
-
-    # Create, update records
-    column_names = get_column_names(table)
-    primary_key = get_primary_key(table)
-    records_all = []
-
-    response_secondary_db = requests.get(base_my_url_secondary)
-    for ir, rec_secondary in enumerate(response_secondary_db.json()):
-        if rec_secondary['trips']:
-            trip_id = rec_secondary['trips'][0]['trip_id']
-            response = requests.get(f'{base_at_url_secondary}{trip_id}', headers=AT_HEADER)
-            records = response.json()["response"]
-
-            for i, rec in enumerate(records):
-                records_all.append(rec)
-                # filter and reorder columns to match schema
-                rec = {key: rec[key] for key in column_names}
-                rec['route_id'] = rec_secondary['route_id']
-                data = json.dumps(rec)
-                res = requests.post(base_my_url, data=data)
-        print(f'Stops created: {len(records_all)}')
-        print(f'Routes processed: {ir}')
-
-    # Delete records
-    # Find existing records that no longer exist
-    records = records_all
-    existing_ids = get_existing_records(table, primary_key)
-    updated_ids = [rec[primary_key] for rec in records]
-    ids_to_delete = [rec_id for rec_id in existing_ids if rec_id not in updated_ids]
-    for rec_id in ids_to_delete:
-        res = requests.delete(f'{base_my_url}{rec_id}')
-
-
-    
+    return conn
 
 def get_column_names(table_name):
     inspector = inspect(engine)

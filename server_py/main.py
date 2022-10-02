@@ -37,8 +37,8 @@ def get_db():
 def create_stop(stop: schemas.StopCreate, db: Session = Depends(get_db)):
     db_stop = crud.get_stop_by_code(db=db, stop_code=stop.stop_code)
     if db_stop:
-        # raise HTTPException(status_code=404, detail="Stop already exists")
-        return crud.update_stop(db=db, stop=stop)
+        raise HTTPException(status_code=409, detail="Stop already exists")
+        # return crud.update_stop(db=db, stop=stop)
     return crud.create_stop(db=db, stop=stop)
 
 
@@ -54,6 +54,13 @@ def read_stop(stop_id: str, db: Session = Depends(get_db)):
     if db_stop is None:
         raise HTTPException(status_code=404, detail="Stop not found")
     return db_stop
+
+@app.get("/stops/trip/{trip_id}", response_model=List[schemas.Stop])
+def read_stops_by_trip(trip_id: str, db: Session = Depends(get_db)):
+    db_stops = crud.get_stops_by_trip(db=db, trip_id=trip_id)
+    if db_stops is None:
+        raise HTTPException(status_code=404, detail=f'Stops not found for trip: {trip_id}')
+    return db_stops
 
 @app.delete("/stops/{stop_code}")
 def delete_stop(stop_code: str, db: Session = Depends(get_db)):
@@ -92,8 +99,8 @@ def read_route(route_id: str, db: Session = Depends(get_db)):
 def create_route(route: schemas.RouteCreate, db: Session = Depends(get_db)):
     db_route = crud.get_route(db=db, route_id=route.route_id)
     if db_route:
-        # raise HTTPException(status_code=404, detail="Stop already exists")
-        return crud.update_route(db=db, route=route)
+        raise HTTPException(status_code=409, detail="Stop already exists")
+        # return crud.update_route(db=db, route=route)
     return crud.create_route(db=db, route=route)
 
 @app.delete("/routes/{route_id}")
@@ -121,7 +128,7 @@ def read_trip(trip_id: str, db: Session = Depends(get_db)):
 def create_trip(trip: schemas.TripCreate, db: Session = Depends(get_db)):
     db_trip = crud.get_trip(db=db, trip_id=trip.trip_id)
     if db_trip:
-        raise HTTPException(status_code=404, detail="Trip already exists")
+        raise HTTPException(status_code=409, detail="Trip already exists")
         # return crud.update_trip(db=db, trip=trip)
     return crud.create_trip(db=db, trip=trip)
 

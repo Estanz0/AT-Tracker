@@ -4,10 +4,7 @@ import { useState } from 'react';
 function App() {
   return (
     <div>
-      <header>
-        <h1>Bus App</h1>
-        <MyMap />
-      </header>
+      <MyMap />
     </div>
   );
 }

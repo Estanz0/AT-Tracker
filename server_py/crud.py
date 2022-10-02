@@ -1,9 +1,9 @@
 from sqlalchemy.orm import Session
-
+from sqlalchemy import text
 import models, schemas
 
 # Stops
-def get_stop(db: Session, stop_id: int):
+def get_stop(db: Session, stop_id: str):
     return db.query(models.Stop).filter(models.Stop.stop_id == stop_id).first()
 
 def get_stop_by_code(db: Session, stop_code: int):
@@ -12,33 +12,34 @@ def get_stop_by_code(db: Session, stop_code: int):
 def get_stops(db: Session):
     return db.query(models.Stop).all()
 
+def get_stops_by_trip(db: Session, trip_id: str):
+    db_stops = db.query(models.Stop) \
+        .join(models.StopTime) \
+        .filter(models.StopTime.trip_id == trip_id) \
+        .all()
+        
+
+    return db_stops
+        
 def create_stop(db: Session, stop: schemas.StopCreate):
-    db_route = db.query(models.Route).filter(models.Route.route_id == stop.route_id).first()
-    stop_dict = stop.dict()
-    stop_dict.pop('route_id', None)
-    db_stop = models.Stop(**stop_dict)
-    if db_route is not None:
-        db_stop.routes.append(db_route)
+    db_stop = models.Stop(**stop.dict())
     db.add(db_stop)
     db.commit()
     db.refresh(db_stop)
     return db_stop
 
 def update_stop(db: Session, stop: schemas.StopCreate):
-    db_route = db.query(models.Route).filter(models.Route.route_id == stop.route_id).first()
-    db_route_stop = db.query(models.route_stop).filter(models.route_stop.c.route_id == stop.route_id, models.route_stop.c.stop_id == stop.stop_id).first()
     db_stop = db.query(models.Stop).filter(models.Stop.stop_code == stop.stop_code).one()
-    if db_route is not None and db_route_stop is None:
-        db_stop.routes.append(db_route)
-    db_stop.stop_id = stop.stop_id
     db.add(db_stop)
     db.commit()
+    db.refresh(db_stop)
     return db_stop
 
 def delete_stop(db: Session, stop: schemas.Stop):
     db.delete(stop)
     db.commit()
     return {"ok": True}
+
 
 # Stop times
 def get_stop_times_by_stop(db: Session, stop_id: str):
@@ -51,6 +52,7 @@ def create_stop_time(db: Session, stop_time: schemas.StopTimeCreate):
     db.refresh(db_stop_time)
     return db_stop_time
 
+
 # Routes
 def get_route(db: Session, route_id: int):
     return db.query(models.Route).filter(models.Route.route_id == route_id).first()
@@ -59,24 +61,19 @@ def get_routes(db: Session):
     return db.query(models.Route).all()
 
 def create_route(db: Session, route: schemas.RouteCreate):
-    db_stop = db.query(models.Stop).filter(models.Stop.stop_id == route.stop_id).first()
-    route_dict = route.dict()
-    route_dict.pop('stop_id', None)
-    db_route = models.Route(**route_dict)
-    if db_stop is not None:
-        db_route.stops.append(db_stop)
+    db_route = models.Route(**route.dict())
     db.add(db_route)
     db.commit()
     db.refresh(db_route)
     return db_route
 
 def update_route(db: Session, route: schemas.RouteCreate):
-    db_route = db.query(models.Route).filter(models.Route.route_id == route.route_id).first()
-    db_stop = db.query(models.Stop).filter(models.Stop.stop_id == route.stop_id).first()
-    if db_stop is not None and route.stop_id not in db_route.stops:
-        db_route.stops.append(db_stop)
+    db_route = db.query(models.Route).filter_by(route_id=route.route_id).first()
+    route_dict = route.dict()
+    db_route = models.Route(**route_dict)
     db.add(db_route)
     db.commit()
+    db.refresh(db_route)
     return db_route
 
 def delete_route(db: Session, route: schemas.Route):
@@ -93,19 +90,18 @@ def get_trips(db: Session):
     return db.query(models.Trip).all()
 
 def create_trip(db: Session, trip: schemas.TripCreate):
-    db_trip = db.query(models.Trip).filter(models.Trip.trip_id == trip.trip_id).first()
-    trip_dict = trip.dict()
-    db_trip = models.Trip(**trip_dict)
+    db_trip = models.Trip(**trip.dict())
     db.add(db_trip)
     db.commit()
     db.refresh(db_trip)
     return db_trip
 
-# def update_trip(db: Session, trip: schemas.TripCreate):
-#     db_trip = db.query(models.Trip).filter_by(trip_id=trip.trip_id).one()
-#     db.add(db_trip)
-#     db.commit()
-#     return db_trip
+def update_trip(db: Session, trip: schemas.TripCreate):
+    db_trip = db.query(models.Trip).filter_by(trip_id=trip.trip_id).one()
+    db.add(db_trip)
+    db.commit()
+    db.refresh(db_trip)
+    return db_trip
 
 def delete_trip(db: Session, trip: schemas.Trip):
     db.delete(trip)

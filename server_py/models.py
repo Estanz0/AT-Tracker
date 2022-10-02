@@ -3,38 +3,70 @@ from sqlalchemy.orm import relationship, backref
 
 from database import Base
 
-route_stop = Table(
-    "route_stop",
-    Base.metadata,
-    Column("stop_id", ForeignKey("stops.stop_id"), primary_key=True),
-    Column("route_id", ForeignKey("routes.route_id"), primary_key=True),
-)
+class Route(Base):
+    __tablename__ = "routes"
+
+    route_id = Column(String, primary_key=True, index=True)
+    route_short_name = Column(String)
+    route_long_name = Column(String)
+    route_type = Column(Integer, nullable=False)
+    route_text_color = Column(String)
+    agency_id = Column(String)
+    route_color = Column(String)
+
+    # stops = relationship("Stop", secondary=route_stop, back_populates="routes")
+
+    # trips = relationship("Trip", backref="routes")
+
+    # vehicle_positions = relationship("VehiclePosition", back_populates="route")
+
+class Shape(Base):
+    __tablename__ = "shapes"
+
+    shape_id = Column(String, primary_key=True, index=True)
+    shape_pt_lat = Column(Float)
+    shape_pt_lon = Column(Float)
+    shape_pt_sequence = Column(Integer)
+    shape_dist_traveled = Column(Float)
+
+class Trip(Base):
+    __tablename__ = "trips"
+
+    trip_id = Column(String, primary_key=True, index=True)
+    trip_headsign = Column(String)
+    route_id = Column(String, ForeignKey("routes.route_id"), nullable=False)
+    block_id = Column(String)
+    direction_id = Column(Integer)
+    shape_id = Column(String)
+    service_id = Column(String, nullable=False)
 
 class Stop(Base):
     __tablename__ = "stops"
 
-    stop_id = Column(String, unique=True, index=True, nullable=False)
-    stop_code = Column(String, primary_key=True, index=True, nullable=False)
-    stop_name = Column(String, nullable=False)
+    stop_id = Column(String, primary_key=True, index=True)
+    stop_code = Column(String)
+    stop_name = Column(String)
     stop_desc = Column(String)
-    stop_lat = Column(Float, nullable=False)
-    stop_lon = Column(Float, nullable=False)
+    stop_lat = Column(Float)
+    stop_lon = Column(Float)
+    parent_station = Column(String, ForeignKey("stops.stop_id"))
+    location_type = Column(Integer)
+    zone_id = Column(String)
 
-    stop_times = relationship("StopTime", backref="stops")
 
-    routes = relationship(
-        "Route", secondary=route_stop, back_populates="stops"
-    )
+    # routes = relationship(
+    #     "Route", secondary=route_stop, back_populates="stops"
+    # )
 
 
 class StopTime(Base):
     __tablename__ = "stop_times"
 
-    trip_id = Column(String, primary_key=True)
-    arrival_time = Column(DateTime)
-    departure_time = Column(DateTime, nullable=False)
+    trip_id = Column(String, ForeignKey("trips.trip_id"), primary_key=True)
     stop_id = Column(String, ForeignKey("stops.stop_id"), primary_key=True)
-    stop_sequence = Column(Integer)
+    arrival_time = Column(DateTime)
+    departure_time = Column(DateTime)
+    stop_sequence = Column(Integer, nullable=False)
     stop_headsign = Column(String)
     pickup_type = Column(Integer)
     drop_off_type = Column(Integer)
@@ -42,28 +74,6 @@ class StopTime(Base):
 
     # stop = relationship("Stop", back_populates="stop_times") 
 
-class Route(Base):
-    __tablename__ = "routes"
-
-    route_id = Column(String, primary_key=True, index=True)
-    route_long_name = Column(String, nullable=False)
-    route_short_name = Column(String, nullable=False)
-
-    stops = relationship("Stop", secondary=route_stop, back_populates="routes")
-
-    trips = relationship("Trip", backref="routes")
-
-    # vehicle_positions = relationship("VehiclePosition", back_populates="route")
-
-class Trip(Base):
-    __tablename__ = "trips"
-
-    trip_id = Column(String, primary_key=True, index=True)
-    route_id = Column(String, ForeignKey("routes.route_id"))
-    service_id = Column(String)
-    trip_headsign = Column(String)
-    direction_id = Column(Integer)
-    shape_id = Column(String)
 
 class VehiclePosition(Base):
     __tablename__ = "vehicle_positions"
