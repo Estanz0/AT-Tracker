@@ -139,6 +139,14 @@ def delete_trip(trip_id: str, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Trip not found")
     return crud.delete_trip(db=db, trip=db_trip)
 
+# Shapes
+@app.get("/shapes/trip/{trip_id}", response_model=List[schemas.Shape])
+def read_shapes_by_trip(trip_id: str, db: Session = Depends(get_db)):
+    db_shapes = crud.get_shapes_by_trip(db=db, trip_id=trip_id)
+    if db_shapes is None:
+        raise HTTPException(status_code=404, detail=f'Shapes not found for trip: {trip_id}')
+    return db_shapes
+
 
 # Vehicle Positions
 @app.get("/vehicle_positions/", response_model=List[schemas.VehiclePosition])

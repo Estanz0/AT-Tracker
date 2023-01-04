@@ -57,6 +57,8 @@ class TripCreate(TripBase):
 
 class Trip(TripBase):
     pass
+    # stops: List[Stop] = []
+    # shapes: List[Shape] = []
 
 # Stops
 class StopBase(BaseModel):

@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy import text
+from sqlalchemy import select
 import models, schemas
 
 # Stops
@@ -18,7 +19,6 @@ def get_stops_by_trip(db: Session, trip_id: str):
         .filter(models.StopTime.trip_id == trip_id) \
         .all()
         
-
     return db_stops
         
 def create_stop(db: Session, stop: schemas.StopCreate):
@@ -107,6 +107,21 @@ def delete_trip(db: Session, trip: schemas.Trip):
     db.delete(trip)
     db.commit()
     return {"ok": True}
+
+# Shape
+def get_shapes_by_trip(db: Session, trip_id: str):
+    stmt = select(models.Shape) \
+        .join(models.Trip, models.Shape.shape_id == models.Trip.shape_id) \
+        .where(models.Trip.trip_id == trip_id)
+    
+    db_shapes = db.execute(stmt).scalars().all()
+
+    # db_shapes = db.query(models.Shape) \
+    #     .join(models.Trip, models.Shape.shape_id == models.Trip.shape_id) \
+    #     .filter(models.Trip.trip_id == trip_id) \
+    #     .all()
+    
+    return db_shapes
 
 
 # VehiclePosition

@@ -1,12 +1,12 @@
 -- Start venv:
-	- AT-Bus/server_py$ source .venv/bin/activate
-
+	- AT-Bus$ source server_py/.venv/bin/activate
 
 -- Start Backend:
-	- AT-Bus/server_py$ uvicorn main:app
+	- AT-Bus$ uvicorn --app-dir=server_py main:app
 
 -- Update DB:
 	- AT-Bus/server_py$ python update/updater_static.py
+	- AT-Bus/server_py$ python update/updater_realtime.py
 
 -- Start Frontend
 	- AT-Bus/client$ npm start

@@ -19,13 +19,22 @@ def download_gtfs_files():
     z.extractall("./data")
 
 def update():
+    print("Downloading ZIP File ...", end=" ")
     download_gtfs_files()
+    print("Completed")
 
-    replace_table(table='routes')
-    replace_table(table='shapes')
-    replace_table(table='trips')
-    replace_table(table='stops')
-    replace_table(table='stop_times')
+    table_names = [
+        'routes',
+        'shapes',
+        'trips',
+        'stops',
+        'stop_times'
+    ]
+
+    for table_name in table_names:
+        print(f'Updating table {table_name} ...', end=" ")
+        replace_table(table=table_name)
+        print("Completed")
 
 def replace_table(table):
     conn = create_connection(r'../at_bus_app.db')
@@ -35,18 +44,18 @@ def replace_table(table):
 
 
 def create_connection(db_file):
-    """ create a database connection to the SQLite database
-        specified by the db_file
+    """ 
+    create a database connection to the SQLite database specified by the db_file
+
     :param db_file: database file
     :return: Connection object or None
     """
-    conn = None
+
     try:
         conn = sqlite3.connect(db_file)
+        return conn
     except Error as e:
         print(e)
-
-    return conn
 
 def get_column_names(table_name):
     inspector = inspect(engine)
