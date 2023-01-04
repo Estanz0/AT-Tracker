@@ -26,7 +26,7 @@ class Shape(Base):
     shape_id = Column(String, primary_key=True, index=True)
     shape_pt_lat = Column(Float)
     shape_pt_lon = Column(Float)
-    shape_pt_sequence = Column(Integer)
+    shape_pt_sequence = Column(Integer, primary_key=True)
     shape_dist_traveled = Column(Float)
 
 class Trip(Base):

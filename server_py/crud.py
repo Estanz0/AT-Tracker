@@ -110,16 +110,10 @@ def delete_trip(db: Session, trip: schemas.Trip):
 
 # Shape
 def get_shapes_by_trip(db: Session, trip_id: str):
-    stmt = select(models.Shape) \
-        .join(models.Trip, models.Shape.shape_id == models.Trip.shape_id) \
-        .where(models.Trip.trip_id == trip_id)
-    
-    db_shapes = db.execute(stmt).scalars().all()
-
-    # db_shapes = db.query(models.Shape) \
-    #     .join(models.Trip, models.Shape.shape_id == models.Trip.shape_id) \
-    #     .filter(models.Trip.trip_id == trip_id) \
-    #     .all()
+    db_shapes = db.query(models.Shape).select_from(models.Trip) \
+        .join(models.Shape, models.Shape.shape_id == models.Trip.shape_id) \
+        .filter(models.Trip.trip_id == trip_id) \
+        .all()
     
     return db_shapes
 

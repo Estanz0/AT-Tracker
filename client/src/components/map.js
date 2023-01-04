@@ -1,5 +1,5 @@
 import React, { useState, useEffect, render }  from 'react';
-import { Map, Marker, Overlay, GeoJson } from "pigeon-maps";
+import { Map, Marker, Overlay, GeoJson, Point } from "pigeon-maps";
 import { stamenToner } from 'pigeon-maps/providers'
 import Line from './line'
 
@@ -11,6 +11,9 @@ const MAP_DEFAULT_ZOOM = 10
 const LOCAL_API_ROOT = 'http://127.0.0.1:8000/'
 
 const TRACESTRACK_ACCESS_TOKEN = '74a26ad038c91b2a5cfb1db3afef30d2'
+
+const MIN_MARKER_SIZE = 2
+const POINT_SIZE_MULTIPLIER = 0.15
 
 // The map display provider
 function tracestrack (x, y, z, dpr) {
@@ -45,32 +48,11 @@ const MyMap = () => {
     const [buses, setBuses] = useState([]);
     const [currentBuses, setCurrentBuses] = useState([]);
     const [stops, setStops] = useState([]);
-    const [tripPath, setTripPath] = useState(
-        {
-            type: 'FeatureCollection',
-            features: [
-                {
-                    type: 'Feature',
-                    geometry: {
-                    type: 'LineString',
-                    coordinates: [
-                        [174.8, -37.0],
-                        [174.8, -36.0],
-                    ],
-                    },
-                    properties: {
-                    prop0: 'value0',
-                    prop1: 0.0,
-                    },
-                },
-            ],
-        }
-    );
-    const [tripPathKey, setTripPathKey] = useState(1); 
-
+    const [tripPath, setTripPath] = useState([]);
 
     const [busImgSize, setBusImgSize] = useState(0)
     const [stopImgSize, setStopImgSize] = useState(0)
+    const [pointRadius, setPointRadius] = useState(0)
 
     const { height, width } = useWindowDimensions();
 
@@ -99,46 +81,24 @@ const MyMap = () => {
         .then(res => res.json())
         .then((data) => { 
             let coords = []
+            console.log('Data')
+            console.log(data)
+            console.log('bus')
+            console.log(bus)
             for(let i = 0; i < data.length; i++) {
                 coords.push([data[i].shape_pt_lon, data[i].shape_pt_lat]);
             }
 
-            coords =    [[174.5, -37.0],
-                        [173.5, -37.0],
-                        [174.0, -36.0],]
+            // coords =    [[174.5, -37.0],
+            //             [173.5, -37.0],
+            //             [174.0, -36.0],]
 
             return coords;
         })
         .then((coords) => {
-            // coords =    [[174.5, -37.0],
-            //             [174.0, -36.0],]
-            // tripPath.features.coordinates = coords
             console.log('Coords');
             console.log(coords);
-            setTripPathKey(1);
-            setTripPath(
-                {
-                    type: 'FeatureCollection',
-                    features: [
-                        {
-                            type: 'Feature',
-                            geometry: {
-                            type: 'LineString',
-                            coordinates: coords,
-                            },
-                            properties: {
-                            prop0: 'value0',
-                            prop1: 0.0,
-                            },
-                        },
-                    ],
-                }
-            );      
-        })
-        .then(() => {
-            console.log('Update');
-            console.log(tripPathKey);
-            console.log(tripPath.features[0].geometry.coordinates);
+            setTripPath(coords)
         })
         .catch((error) => { console.log(error); }) 
     }
@@ -146,60 +106,17 @@ const MyMap = () => {
     function resetBuses() {
         setCurrentBuses(buses);
         setStops([]);
-
-        setTripPathKey(0);
-
-        // tripPath.features.geometry.coordinates = [[174.0, -37.0]];
-        setTripPath(
-            {
-                type: 'FeatureCollection',
-                features: [
-                    {
-                        type: 'Feature',
-                        geometry: {
-                            type: 'LineString',
-                            coordinates: [
-                                [174.8, -37.0],
-                                [174.8, -36.0],
-                            ],
-                        },
-                        properties: {
-                            prop0: 'value0',
-                            prop1: 0.0,
-                        },
-                    },
-                ],
-            }
-        );
-        console.log('Reset');
-        console.log(tripPathKey);
-        console.log(tripPath.features[0].geometry.coordinates);
+        setTripPath([]);
     }
 
     function handleBoundsChanged({ center, zoom, bounds, initial }) {
         setBusImgSize(1.80 * zoom - 2.5);
         setStopImgSize(1.50 * zoom - 2.5);
+        setPointRadius(Math.max(POINT_SIZE_MULTIPLIER * zoom, MIN_MARKER_SIZE));
     }
 
     if(!buses)
         return <></>
-
-    // render() 
-    //     {
-    //         const geoJsonComponent = () => {
-    //             if(tripPathKey == 1) {
-    //                 return (
-    //                     <GeoJson
-    //                         key={tripPathKey}
-    //                         data={tripPath}
-    //                         styleCallback={(feature, hover) => {
-    //                             return { strokeWidth: '2', stroke: 'black' }
-    //                         }}
-    //                     />
-    //                 )
-    //             }
-    //         }
-    //     }
 
     return (
         <Map 
@@ -229,13 +146,16 @@ const MyMap = () => {
                     </Overlay>
                 )
             })}
-            <GeoJson
-                key={tripPathKey}
-                data={tripPath}
-                styleCallback={(feature, hover) => {
-                    return { strokeWidth: '2', stroke: 'black' }
-                }}
-            />
+            {tripPath.length && tripPath.map((point, index) => {
+                var latlng = [+point[1], +point[0]];
+                return (
+                    <Overlay anchor={latlng} offset={[pointRadius, pointRadius / POINT_SIZE_MULTIPLIER]} key={index} >
+                        <svg width={pointRadius * 2} height={pointRadius * 2}>
+                            <circle cx={pointRadius} cy={pointRadius} r={pointRadius} fill="green" />
+                        </svg>
+                    </Overlay>
+                )
+            })}
         </Map>
     )
 }
