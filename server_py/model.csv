@@ -62,3 +62,12 @@ mysql,AT-GTFS,trips,block_id,,string,50,,,,
 mysql,AT-GTFS,trips,direction_id,,integer,1,,,,
 mysql,AT-GTFS,trips,shape_id,,string,50,,,shapes,shape_id
 mysql,AT-GTFS,trips,service_id,,string,50,NOT NULL,,calendar,service_id
+mysql,AT-GTFS,vehicle_positions,vehicle_id,,string,50,PRIMARY KEY,,,
+mysql,AT-GTFS,vehicle_positions,vehicle_lat,,float,20,,,,
+mysql,AT-GTFS,vehicle_positions,vehicle_lon,,float,20,,,,
+mysql,AT-GTFS,vehicle_positions,vehicle_bearing,,float,20,,,,
+mysql,AT-GTFS,vehicle_positions,vehicle_speed,,float,20,,,,
+mysql,AT-GTFS,vehicle_positions,vehicle_timestamp,,datetime,50,,,,
+mysql,AT-GTFS,vehicle_positions,trip_id,,string,50,,,trips,trip_id
+mysql,AT-GTFS,vehicle_positions,route_id,,string,50,,,routes,route_id
+mysql,AT-GTFS,vehicle_positions,direction_id,,integer,1,,,,

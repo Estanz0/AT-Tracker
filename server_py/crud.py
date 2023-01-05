@@ -125,6 +125,11 @@ def get_vehicle_position(db: Session, vehicle_id: str):
 def get_vehicle_positions(db: Session):
     return db.query(models.VehiclePosition).all()
 
+def get_vehicle_positions_in_service(db: Session):
+    return db.query(models.VehiclePosition).select_from(models.StopTime) \
+        .join(models.VehiclePosition, models.VehiclePosition.trip_id == models.StopTime.trip_id) \
+        .all()
+
 def create_vehicle_position(db: Session, vehicle_position: schemas.VehiclePositionCreate):
     db_vehicle_position = db.query(models.VehiclePosition).filter(models.VehiclePosition.vehicle_id == vehicle_position.vehicle_id).first()
     vehicle_position_dict = vehicle_position.dict()

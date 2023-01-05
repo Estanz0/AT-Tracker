@@ -151,7 +151,7 @@ def read_shapes_by_trip(trip_id: str, db: Session = Depends(get_db)):
 # Vehicle Positions
 @app.get("/vehicle_positions/", response_model=List[schemas.VehiclePosition])
 def read_vehicle_positions(db: Session = Depends(get_db)):
-    vehicle_positions = crud.get_vehicle_positions(db=db)
+    vehicle_positions = crud.get_vehicle_positions_in_service(db=db)
     return vehicle_positions
 
 @app.get("/vehicle_positions/{vehicle_id}", response_model=schemas.VehiclePosition)

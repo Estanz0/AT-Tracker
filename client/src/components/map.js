@@ -12,36 +12,13 @@ const LOCAL_API_ROOT = 'http://127.0.0.1:8000/'
 
 const TRACESTRACK_ACCESS_TOKEN = '74a26ad038c91b2a5cfb1db3afef30d2'
 
-const MIN_MARKER_SIZE = 2
+const MIN_MARKER_SIZE = 3
 const POINT_SIZE_MULTIPLIER = 0.15
 
 // The map display provider
 function tracestrack (x, y, z, dpr) {
   return `https://tile.tracestrack.com/base/${z}/${x}/${y}.png?key=${TRACESTRACK_ACCESS_TOKEN}`
 }
-
-// let tripPath = {
-//     type: 'FeatureCollection',
-//     features: [
-//         {
-//             type: 'Feature',
-//             geometry: {
-//             type: 'LineString',
-//             coordinates: [
-//                 [174.0, -37.0],
-//                 [174.0, -36.0],
-//             ],
-//             },
-//             properties: {
-//             prop0: 'value0',
-//             prop1: 0.0,
-//             },
-//         },
-//     ],
-// }
-
-
-
 
 const MyMap = () => {
 
@@ -88,11 +65,6 @@ const MyMap = () => {
             for(let i = 0; i < data.length; i++) {
                 coords.push([data[i].shape_pt_lon, data[i].shape_pt_lat]);
             }
-
-            // coords =    [[174.5, -37.0],
-            //             [173.5, -37.0],
-            //             [174.0, -36.0],]
-
             return coords;
         })
         .then((coords) => {
